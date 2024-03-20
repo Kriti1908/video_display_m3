@@ -30,11 +30,8 @@
             <div class="side_nav">
                 <button class="tooltip" id="select_photo"><span class="material-symbols-outlined">add_photo_alternate</span><span class="tooltiptext">Select photo</span></button>
                 <button class="tooltip" id="upload"><span class="material-symbols-outlined">upload</span><span class="tooltiptext">Upload</span></button>
-                <button class="tooltip" id="music"><span class="material-symbols-outlined">music_note</span><span class="tooltiptext">Music</span></button>
-                <button class="tooltip" id="videocam"><span class="material-symbols-outlined">videocam</span><span class="tooltiptext">Videocam</span></button>
-                <button class="tooltip" id="undo"><span class="material-symbols-outlined">undo</span><span class="tooltiptext">Undo</span></button>
-                <button class="tooltip" id="redo"><span class="material-symbols-outlined">redo</span><span class="tooltiptext">Redo</span></button>
-                <button class="tooltip" id="save_file"><span class="material-symbols-outlined">file_save</span><span class="tooltiptext">File save</span></button>
+                <button class="tooltip" id="fade"><span class="material-symbols-outlined">fade</span><span class="tooltiptext">fade</span></button>
+                <button class="tooltip" id="rotate"><span class="material-symbols-outlined">rotate</span><span class="tooltiptext">rotate</span></button>
             </div>
         
             <div class="non_side">
@@ -94,7 +91,9 @@
             <button onclick="searchImages()">Search</button>
         </div>
 
-        <div id="search-result-message"></div>
+        <div id="search-results" class="search-results">
+            <div id="search-result-message"></div>
+        </div>
         
         <div class="editor">
             {% for photo in photos %}

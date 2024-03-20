@@ -68,7 +68,7 @@ body
     background-color: rgba(43, 43, 43, 0.0);
     text-align: center;
     align-items: center;
-    padding-top: 1%;
+    padding-top: 15%;
     max-height: 35rem;
 }
 
@@ -118,8 +118,8 @@ body
     flex: 1 0 65%;
     background-color: rgba(99, 99, 99, 0);
     color: #fff;
-    max-height: 100%;
-    width: auto;
+    max-height: 850px;
+    width: 1000px;
     margin-left: 1%;
     border-radius: 10px;
     margin-right: 10%;
@@ -416,7 +416,7 @@ body
 
 .img_container {
   flex: 1 0 80%;
-  background-color: aquamarine;
+  background-color: transparent;
   max-width: 20rem;
   margin: 0;
   position: relative;
@@ -540,19 +540,22 @@ body
   padding: 0.5rem;
   width: 60%;
   border-radius: 5px;
-  border: 1px solid #ccc;
+  background-color: rgba(92, 92, 92, 0.7);
+  color: #fff;
+  border: 1px solid #919191;
   margin-right: 1%;
 }
 
 #search-bar:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #fff;
+  color: #fff;
 }
 
 .search-container button {
   padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: #fff;
+  background-color: rgba(92, 92, 92, 0.7);
+  color: #ffffff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -560,8 +563,48 @@ body
 }
 
 .search-container button:hover {
-  background-color: #0056b3;
+  background-color: #4b5968;
 }
+
+/* Style for the search results container */
+/* Style for the search results container */
+/* Style for the search results container */
+.search-results {
+  width: 60%;
+  margin-top: 0.1rem;
+  margin-bottom: 1rem;
+  margin-left: 17.5%;
+  padding: 1rem;
+  color: #fff;
+  background-color: rgba(128, 128, 128, 0.5);
+  color: #000;
+  border-radius: 5px;
+  border: 1px solid #ccc; /* Add border */
+  max-height: 200px; /* Add max height to enable scrolling if necessary */
+  overflow-y: auto; /* Enable vertical scrolling if necessary */
+}
+
+/* Style for each search result item */
+.search-result-item {
+  margin-bottom: 0.5rem;
+}
+
+.img_container.scaled {
+  transform: scale(1.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+
+/* Style for the "Filename not found" message */
+.not-found-filename {
+  background-color: lightcoral;
+}
+
+/* Style for the "No images found" message */
+.no-images-found {
+  color: #ffffff;
+}
+
 
 .matched-filename {
   background-color: lightgreen;
@@ -571,3 +614,17 @@ body
 .not-found-filename {
   background-color: lightcoral;
 }
+
+.search{
+  background-color: rgba(92, 92, 92, 0.7);
+  color: #fff;
+}
+
+#search-bar::placeholder {
+  color: #ffffff; /* Change placeholder color to gray */
+}
+
+.search::placeholder {
+  color: #ffffff; /* Change placeholder color to gray */
+}
+

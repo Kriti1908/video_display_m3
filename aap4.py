@@ -12,8 +12,10 @@ import numpy as np
 import cv2
 from PIL import Image
 from io import BytesIO
-from moviepy.editor import ImageSequenceClip
+from moviepy.editor import ImageSequenceClip, VideoFileClip, ImageClip, concatenate_videoclips
+from moviepy.video.fx.fadein import fadein
 from datetime import datetime
+from moviepy.video.fx.rotate import rotate
 
 mycon=mysql.connector.connect(host="localhost",user="root",password="Nidhi&Kriti1911",database="iss_proj")
 mycursor=mycon.cursor()
@@ -28,6 +30,8 @@ app.secret_key = 'your_secret_key_here'
 app.config['JWT_ACCESS_COOKIE_PATH'] = '/user'
 
 jwt = JWTManager(app)
+video_in_database=""
+video_timestamp=""
 
 # ussername=""
 
@@ -165,27 +169,6 @@ def receive_array():
         print("Gandu kya kiya")
         return 'No files received in the request.'
 
-
-# @app.route('/photos/<username>')
-# def display_photos(username):
-#     try:
-#         # Fetch photos from the database
-#         cursor = db_connection.cursor()
-#         cursor.execute("SELECT filename, photo FROM photos WHERE username = %s", (username,))
-#         photos = cursor.fetchall()
-#         cursor.close()
-        
-#         # Check if any photos were found
-#         if not photos:
-#             return 'No photos found for this user.'
-
-#         # Pass the photos to the template
-#         return render_template('video.html', username=username, photos=photos)
-
-#     except Exception as e:
-#         return f"An error occurred: {str(e)}"
-   
-    
 @app.route('/videos/<username>', methods=['GET', 'POST'])
 @jwt_required()
 def re_direct(username):
@@ -249,16 +232,21 @@ def video():
 @app.route('/search')
 def search_images():
     query = request.args.get('query')
-    user_id = session["user_id"]
+    username = session.get('username')
 
-    # Query the user's database for images matching the search query
-    cursor = db_connection.cursor()
-    cursor.execute("SELECT filename FROM photos WHERE username = %s AND filename LIKE %s", (user_id, '%' + query + '%'))
-    matched_images = [image[0] for image in cursor.fetchall()]
-    cursor.close()
+    if query:
+        # Query the database for filenames matching the search query
+        cursor = db_connection.cursor()
+        cursor.execute("SELECT filename FROM photos WHERE username = %s AND filename LIKE %s", (username, query + '%'))
+        matched_images = [image[0] for image in cursor.fetchall()]
+        cursor.close()
 
-    # Return the matched images to the frontend
-    return jsonify(success=True, images=matched_images)
+        # Return the matched images to the frontend
+        return jsonify(success=True, images=matched_images)
+    else:
+        # Handle empty search query
+        return jsonify(success=True, images=[])
+
   
     
     
@@ -299,7 +287,7 @@ def save_selected_photos():
                 image = Image.open(BytesIO(photo[0]))
 
                 # Resize image to a common size (e.g., 640x480)
-                image = image.resize((640, 480))
+                image = image.resize((1000, 850))
 
                 # Convert image to numpy array and add to list
                 images.append(np.array(image))
@@ -311,7 +299,7 @@ def save_selected_photos():
         clip.write_videofile(f'static/{video_filename}')
 
         # Read the video file and convert it to base64
-        with open('static/output_video2.mp4', 'rb') as f:
+        with open(f'static/{video_filename}', 'rb') as f:
             video_blob = f.read()
             video_base64 = base64.b64encode(video_blob).decode('utf-8')
 
@@ -323,13 +311,155 @@ def save_selected_photos():
         connection.commit()
         connection.close()
         video_url = url_for('static', filename=video_filename)
+        
         print("Video created successfully.")
+
+        session['video_filename'] = video_filename
+        session['video_timestamp'] = timestamp
         return video_url
     video_url = create_video(selected_filenames)
     
     print("Video URL:", video_url)
     return jsonify({'video_url': video_url})
 
+# print("video in database",video_in_database)
+
+@app.route('/add_transition', methods=['GET'])
+def add_transition():
+    # connection = mysql.connector.connect(
+    #     host="localhost",
+    #     user="root",
+    #     password="Nidhi&Kriti1911",
+    #     database="iss_proj"
+    # )
+    # cursor = connection.cursor()
+    username=session["username"]
+    video_in_database=session['video_filename']
+    video_timestamp = session['video_timestamp']
+
+    print("video in database",video_in_database)
+    print("video timestamp",video_timestamp)
+
+    # Query to select video from the database
+    query = "SELECT video FROM videos WHERE filename = %s"
+
+    # Execute the query
+    mycursor.execute(query, (video_in_database,))
+
+    # Fetch the video as a single blob
+    video_blob = mycursor.fetchone()[0]
+
+    # Write the video blob to a temporary file
+    with open("temp_video.mp4", "wb") as file:
+        file.write(video_blob)
+
+    # Close MySQL connection
+    # connection.close()
+
+    # Read the temporary video file as a VideoFileClip
+    video_clip = VideoFileClip("temp_video.mp4")
+
+    # Break down the video into frames
+    frames = [frame for frame in video_clip.iter_frames()]
+
+    # Convert frames to ImageClips with transitions
+    clips_with_transitions = []
+    for frame in frames:
+        # Convert frame to ImageClip with transition and add to list
+        clip = ImageClip(np.array(frame), duration=1).fx(fadein, duration=1)  # Adjust duration as needed
+
+        clips_with_transitions.append(clip)
+
+    # Concatenate the clips with transitions
+    final_clip = concatenate_videoclips(clips_with_transitions, method="compose")
+
+    # Set fps for the final_clip (assuming 24 fps for example)
+    final_clip.fps = 24  # You can adjust the fps as needed
+
+    # Write video with transitions to file
+    final_clip.write_videofile(f"static/output_video_with_fade_{video_timestamp}.mp4")  # Adjust codec as needed
+
+    with open(f"static/output_video_with_fade_{video_timestamp}.mp4","rb") as ofile:
+        video_blob = ofile.read()
+        query2 = "INSERT INTO videos (username, filename, video) VALUES (%s, %s, %s)"
+        mycursor.execute(query2, (username, f"static/output_video_with_fade_{video_timestamp}.mp4", video_blob))
+
+    video_in_database = f"output_video_with_fade_{video_timestamp}.mp4"
+
+    print("Video with transitions created successfully.")
+    return jsonify({'video_url': url_for('static', filename=f"output_video_with_fade_{video_timestamp}.mp4")})
+
+
+@app.route('/add_transition_rotate', methods=['GET'])
+def add_transition_rotate():
+    # Connect to MySQL database
+    # connection = mysql.connector.connect(
+    #     host="localhost",
+    #     user="root",
+    #     password="Nidhi&Kriti1911",
+    #     database="iss_proj"
+    # )
+    # cursor = connection.cursor()
+
+    username=session["username"]
+    video_in_database=session['video_filename']
+    video_timestamp = session['video_timestamp']
+
+    # Query to select video from the database
+    query = "SELECT video FROM videos WHERE filename = %s"
+
+    # Execute the query
+    mycursor.execute(query, (video_in_database,))
+
+    # Fetch the video as a single blob
+    video_blob = mycursor.fetchone()[0]
+
+    # Write the video blob to a temporary file
+    with open("temp_video.mp4", "wb") as file:
+        file.write(video_blob)
+
+    # Close MySQL connection
+    # connection.close()
+
+    # Read the temporary video file as a VideoFileClip
+    video_clip = VideoFileClip("temp_video.mp4")
+
+    # Break down the video into frames
+    frames = [frame for frame in video_clip.iter_frames()]
+
+    # Calculate duration for each frame
+    frame_duration = video_clip.duration / len(frames)
+
+    # Convert frames to ImageClips with transitions
+    clips_with_transitions = []
+    for i, frame in enumerate(frames):
+        # Convert frame to ImageClip
+        frame_clip = ImageClip(frame, duration=frame_duration)
+        # Rotate frame into view over the duration of the clip
+        clip = rotate(frame_clip, lambda t: 360 * t / frame_duration, unit='deg')  # Rotate frame from 0 to 360 degrees over the duration of the frame
+        clips_with_transitions.append(clip)
+
+    # Concatenate the clips with transitions
+    final_clip = concatenate_videoclips(clips_with_transitions, method="compose")
+
+    # Set fps for the final_clip (assuming 24 fps for example)
+    final_clip.fps = 24  # You can adjust the fps as needed
+
+    # Write video with transitions to file
+    final_clip.write_videofile(f"static/output_video_with_rotation_transition{video_timestamp}.mp4")  # Adjust codec as needed
+    
+    with open(f"static/output_video_with_rotation_transition{video_timestamp}.mp4","rb") as ofile:
+        video_blob = ofile.read()
+        query2 = "INSERT INTO videos (username, filename, video) VALUES (%s, %s, %s)"
+        mycursor.execute(query2, (username, f"static/output_video_with_rotation_transition{video_timestamp}.mp4", video_blob))
+
+    video_in_database = f"output_video_with_rotation_transition{video_timestamp}.mp4"
+
+    print("Video with rotation transition created successfully.")
+    return jsonify({'video_url': url_for('static', filename=f"output_video_with_rotation_transition{video_timestamp}.mp4")})
+
+# Example usage
+# create_video_with_transitions('output_video_20240317111222.mp4')  # Replace 'output_video_20240317111222.mp4' with the actual video filename from your database
 
 if __name__ == '__main__':
     app.run(debug=True)

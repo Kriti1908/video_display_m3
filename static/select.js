@@ -51,13 +51,21 @@ function saveSelection() {
             throw new Error('No video_url in response');
         }
         let videoUrl = data.video_url;
-        setTimeout(() => {
-            let videoTag = document.getElementById('video-preview');
-            videoTag.src = videoUrl;
-            videoTag.type = 'video/mp4';
-            videoTag.load();
-            videoTag.play(); // Start playing the video automatically
-        }, 3000);
+        let videoTag = document.getElementById('video-preview');
+        // Create a new source element
+        // let source = document.getElementById("video-preview");
+        // Set the source element's src and type attributes
+        // videoTag.src = videoUrl;
+        // videoTag.type = 'video/mp4';
+        // Remove any existing sources from the video tag
+        // while (videoTag.firstChild) {
+        //     videoTag.firstChild.remove();
+        // }
+        // Add the new source to the video tag
+        // videoTag.appendChild(source);
+        // Load the new video data and play the video
+        videoTag.load();
+        videoTag.play(); // Start playing the video automatically
     })
     .catch(error => {
         console.error('Error sending selected filenames:', error);
